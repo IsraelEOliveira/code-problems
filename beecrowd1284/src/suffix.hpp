@@ -1,5 +1,29 @@
-#include "automaton.hpp"
+#include <fstream>
+#include "common.hpp"
 
+
+namespace sxa {
+
+struct State {
+  u32 len;
+  i32 link;
+  bool is_final;
+  std::map<i8, u32> edges;
+};
+
+struct Automaton {
+  std::vector<State> q;
+
+  auto operator[](u32 i) -> State& {
+    return q[i];
+  }
+
+  template <typename S>
+  auto add_state(S && s) -> u32 {
+    q.push_back(std::forward<S>(s));
+    return std::size(q) - 1;
+  }
+};
 
 auto append_word(Automaton& sam, std::string const& word) -> Automaton {
   auto last = 0ul;
@@ -8,17 +32,13 @@ auto append_word(Automaton& sam, std::string const& word) -> Automaton {
   while (i < std::size(word) && sam.q[last].edges.count(word[i])) {
     last = sam.q[last].edges[word[i]];
     ++i;
-
-    if (i == std::size(word)) {
-      sam.q[last].is_final = true;
-    }
   }
 
   /* For each letter */
   for (; i < std::size(word); ++i) {
     auto const produce = word[i];
 
-    auto cur = sam.add_state(State{ .len = sam[last].len + 1, .link = -1, .is_final = false });
+    auto cur = sam.add_state(State{ .len = sam[last].len + 1, .link = -1, .is_final = true });
     
     auto p = last;
     while (p != -1 && !sam[p].edges.count(produce)) {
@@ -38,7 +58,6 @@ auto append_word(Automaton& sam, std::string const& word) -> Automaton {
       else {
         auto clone = sam.add_state(sam[q]);
 
-        sam[clone].is_final = false;
         sam[clone].len = sam[p].len + 1;
         sam[cur].link = clone;
         sam[q].link = clone;
@@ -51,12 +70,6 @@ auto append_word(Automaton& sam, std::string const& word) -> Automaton {
     }
 
     last = cur;
-  }
-
-  auto final_state = last;
-  while (final_state != -1) {
-    sam[final_state].is_final = true;
-    final_state = sam[final_state].link;
   }
 
   return sam;
@@ -103,3 +116,51 @@ auto run_words(Automaton const& sam, std::vector<std::string> const& words) -> d
 
   return sum / static_cast<double>(std::size(steps));
 }
+
+auto save_automaton(Automaton const& sam, std::string const& name) -> void {
+  auto builder = std::ofstream(name);
+
+  auto space = [](u32 level) -> std::string {
+    return std::string(2 * level, ' ');
+  };
+
+  builder << R"(<?xml version="1.0" encoding="UTF-8" standalone="no"?><!--Created with JFLAP 7.1.-->)" << '\n';
+
+  builder << "<structure>\n"
+    << space(2) << "<type>fa</type>\n"
+    << space(4) << "<automaton>\n";
+
+  for (auto i = 0ul; i < std::size(sam.q); ++i) {
+    builder << space(6) << "<state "
+      << "id=\"" << i << "\" "
+      << "name=\"q" << i << "\">\n";
+
+    builder << space(8) << "<x>" << 0 << "</x>\n";
+    builder << space(8) << "<y>" << 0 << "</y>\n";
+    
+    if (i == 0) {
+      builder << space(8) << "<initial/>\n";
+    }
+
+    if (sam.q[i].is_final) {
+      builder << space(8) << "<final/>\n";
+    }
+
+    builder << space(6) << "</state>\n";
+  }
+
+  for (auto i = 0ul; i < std::size(sam.q); ++i) {
+    for (auto [l, r]: sam.q[i].edges) {
+      builder << space(6) << "<transition>\n";
+      builder << space(8) << "<from>" << i << "</from>\n";
+      builder << space(8) << "<to>"   << r << "</to>\n";
+      builder << space(8) << "<read>" << l << "</read>\n";
+      builder << space(6) << "</transition>\n";
+    }
+  }
+
+  builder << space(2) << "</automaton>\n"
+    << "</structure>\n";
+}
+
+} // sxa
