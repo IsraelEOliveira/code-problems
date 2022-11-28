@@ -3,22 +3,22 @@
 ### Cenário: hello, heaven, goodbye, ...
 
 #### Sufixo (aceita fatores)
-![hello-sxa](./automata/hello-sxa.png)
+![hello-sxa](./hello-sxa.png)
 
 #### Aceitação
-![hello-test](./automata/hello-test.png)
+![hello-test](./hello-test.png)
 
 #### Trie
-![hello-pxa](./automata/hello-pxa.png)
+![hello-pxa](./hello-pxa.png)
 
 
 ### Cenário: structure, ride, stress, ...
 
 #### Sufixo (aceita fatores)
-![structure-sxa](./automata/structure-sxa.png)
+![structure-sxa](./structure-sxa.png)
 
 #### Aceitação
-![structure-test](./automata/structure-test.png)
+![structure-test](./structure-test.png)
 
 #### Trie
-![structure-pxa](./automata/structure-pxa.png)
+![structure-pxa](./structure-pxa.png)
